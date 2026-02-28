@@ -1,34 +1,18 @@
 ﻿#Requires AutoHotkey v2.0
 
-SetKeyDelay(50, 50)   ; improves reliability on Win11
+SetKeyDelay(50, 50)
 
-; -------------------------------
-; Open Quick Settings
-; -------------------------------
+eco := A_Args.Length >= 1 ? A_Args[1] : ""
+
+if (eco = "")
+    ExitApp
+
 Send("#a")
-
-; Wait for panel instead of guessing timing
 WinWaitActive("Quick Settings", , 2)
 
-; -------------------------------
-; Focus tile grid
-; -------------------------------
 Send("{Tab}")
-
-
-; -------------------------------
-; Navigate directly to Energy Saver
-; -------------------------------
 Send("{Down 3}")
+Send("{Space}")
 
-
-Send("{Space}")   ; toggle
-
-
-; -------------------------------
-; Close Quick Settings
-; -------------------------------
 Send("#a")
-
 ExitApp
-

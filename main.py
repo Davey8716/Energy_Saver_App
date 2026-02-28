@@ -72,12 +72,9 @@ class windows11energysaverswitch(QWidget):
         self.button.toggled.connect(self.on_mode_changed)
         self.button.clicked.connect(self.hide)
 
-        # initial visuals + persist (optional)
+        # initial visuals only (no engine call)
         self.button_visual_update(initial_eco)
-
-        # ----- IMPORTANT: sync engine on startup -----
-        run_energy_toggle(initial_eco)
-
+        
     def on_mode_changed(self, eco: bool):
         self.button_visual_update(eco)
         run_energy_toggle(eco)
