@@ -64,7 +64,6 @@ class windows11energysaverswitch(QWidget):
 
         # ----- init state WITHOUT firing handlers -----
         initial_eco = bool(self.config.get("eco_mode", False))
-        self.button.blockSignals(True)
         self.button.setChecked(initial_eco)
         self.button.blockSignals(False)
 
