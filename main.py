@@ -3,26 +3,12 @@ from pathlib import Path
 import sys
 
 from PySide6.QtWidgets import QWidget,QApplication,QPushButton, QSystemTrayIcon,QMenu
-from PySide6.QtGui import QIcon, QAction,Qt 
+from PySide6.QtGui import QIcon, QAction,Qt,QFont
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from state_management import load_config, get_base_dir,save_config
 from run_energy_saver import run_energy_toggle
 
 SERVER_NAME = "EnergySaverSingleton"
-
-from pathlib import Path
-import sys
-
-from PySide6.QtWidgets import QWidget, QApplication, QPushButton, QSystemTrayIcon, QMenu
-from PySide6.QtGui import QIcon, QAction, QFont
-from PySide6.QtCore import Qt
-from PySide6.QtNetwork import QLocalServer, QLocalSocket
-
-from state_management import load_config, get_base_dir, save_config
-from run_energy_saver import run_energy_toggle   # <- change to accept bool
-
-SERVER_NAME = "EnergySaverSingleton"
-
 
 class windows11energysaverswitch(QWidget):
     def __init__(self):
@@ -110,11 +96,8 @@ class windows11energysaverswitch(QWidget):
     def exit_app_from_tray(self):
         QApplication.quit()
 
-
 if __name__ == "__main__":
     app = QApplication()
-    app.setOrganizationName("main")
-    app.setApplicationName("main")
 
     socket = QLocalSocket()
     socket.connectToServer(SERVER_NAME)
