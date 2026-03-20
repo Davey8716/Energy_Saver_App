@@ -16,14 +16,20 @@ def run_energy_toggle(eco_mode: bool):
         return
 
     try:
+        # Kill any existing AHK instance (prevents silent ignore)
+        subprocess.call(
+            ["taskkill", "/f", "/im", "AutoHotkey64.exe"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
         subprocess.Popen(
             [
                 str(ahk_exe),
                 str(script),
                 "1" if eco_mode else "0"
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            ]
         )
+
     except Exception as e:
         print(f"Failed to launch script: {e}")

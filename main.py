@@ -4,6 +4,7 @@ import sys
 
 from PySide6.QtWidgets import QWidget,QApplication,QPushButton, QSystemTrayIcon,QMenu
 from PySide6.QtGui import QIcon, QAction,Qt,QFont
+from PySide6.QtCore import QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from state_management import load_config, get_base_dir,save_config
 from run_energy_saver import run_energy_toggle
@@ -50,19 +51,21 @@ class windows11energysaverswitch(QWidget):
 
         # ----- init state WITHOUT firing handlers -----
         initial_eco = bool(self.config.get("eco_mode", False))
+    
+
+        self.button.blockSignals(True)
         self.button.setChecked(initial_eco)
         self.button.blockSignals(False)
 
-        # ----- signals (state-driven, not click-driven) -----
         self.button.toggled.connect(self.on_mode_changed)
-        self.button.clicked.connect(self.hide)
-
-        # initial visuals only (no engine call)
-        self.button_visual_update(initial_eco)
         
     def on_mode_changed(self, eco: bool):
+        print("TOGGLE FIRED:", eco)
         self.button_visual_update(eco)
         run_energy_toggle(eco)
+        
+            # hide AFTER logic runs
+        QTimer.singleShot(150, self.hide)
 
     def button_visual_update(self, eco: bool):
         self.button.setText("Eco Mode" if eco else "Normal Mode")

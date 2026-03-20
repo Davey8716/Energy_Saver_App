@@ -9,6 +9,11 @@ if (eco = "")
 
 Send("#a")
 WinWaitActive("Quick Settings", , 2)
+Sleep(250)
+
+; --- force consistent starting focus ---
+Send("{Home}")
+Sleep(100)
 
 Send("{Tab}")
 Send("{Down 3}")
