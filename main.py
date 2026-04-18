@@ -1,10 +1,9 @@
 
-from pathlib import Path
 import sys
+import threading
 
-from PySide6.QtWidgets import QWidget,QApplication,QPushButton, QSystemTrayIcon,QMenu
-from PySide6.QtGui import QIcon, QAction,Qt,QFont
-from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QWidget,QApplication,QPushButton
+from PySide6.QtGui import Qt,QFont
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from state_management import load_config, get_base_dir,save_config
 from run_energy_saver import run_energy_toggle
@@ -14,6 +13,7 @@ SERVER_NAME = "EnergySaverSingleton"
 class windows11energysaverswitch(QWidget):
     def __init__(self):
         super().__init__()
+        self.toggle_lock = threading.Lock()
 
         self.setWindowTitle("Windows Energy Saver Switch")
         self.setFixedSize(200, 100)
@@ -22,20 +22,6 @@ class windows11energysaverswitch(QWidget):
         self.server = QLocalServer(self)
         self.server.listen(SERVER_NAME)
         self.server.newConnection.connect(self.handle_activation)
-
-        exit_action = QAction("Exit", self)
-        exit_action.triggered.connect(self.exit_app_from_tray)
-
-        self.tray = QSystemTrayIcon(self)
-        base_dir = Path(__file__).parent
-        icon_path = base_dir / "energyleaf.ico"
-
-        menu = QMenu()
-        menu.addAction(exit_action)
-        self.tray.setContextMenu(menu)
-        self.tray.setIcon(QIcon(str(icon_path)))
-        self.tray.setVisible(True)
-        self.tray.activated.connect(self.on_tray_activated)
 
         self.button = QPushButton(self)
         self.button.setFont(QFont("Rubik", 11))
@@ -65,10 +51,15 @@ class windows11energysaverswitch(QWidget):
         self.button_visual_update(eco)
         self.config["eco_mode"] = eco
         save_config(self.config_path, self.config)
-        run_energy_toggle(eco)
-        
-            # hide AFTER logic runs
-        QTimer.singleShot(150, self.hide)
+        threading.Thread(
+            target=self.run_energy_toggle_background,
+            args=(eco,),
+            daemon=True,
+        ).start()
+
+    def run_energy_toggle_background(self, eco: bool):
+        with self.toggle_lock:
+            run_energy_toggle(eco)
 
     def button_visual_update(self, eco: bool):
         self.button.setText("Eco Mode" if eco else "Normal Mode")
@@ -82,23 +73,6 @@ class windows11energysaverswitch(QWidget):
         self.setWindowState(self.windowState() & ~Qt.WindowMinimized)
         self.activateWindow()
         self.raise_()
-
-    def on_tray_activated(self, reason):
-        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
-            if self.isVisible():
-                self.hide()
-            else:
-                self.showNormal()
-                self.setWindowState(self.windowState() & ~Qt.WindowMinimized)
-                self.activateWindow()
-                self.raise_()
-
-    def closeEvent(self, event):
-        event.ignore()
-        self.hide()
-
-    def exit_app_from_tray(self):
-        QApplication.quit()
 
 if __name__ == "__main__":
     app = QApplication()

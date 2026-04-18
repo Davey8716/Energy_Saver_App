@@ -1,6 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 
-SetKeyDelay(50, 50)
+SendMode("Input")
+SetKeyDelay(0, 0)
 
 eco := A_Args.Length >= 1 ? A_Args[1] : ""
 

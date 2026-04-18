@@ -4,9 +4,7 @@ import sys
 from pathlib import Path
 
 def load_config(config_path):
-
     default = {"eco_mode": False}
-
     try:
         if not config_path.exists():
             save_config(config_path, default)
@@ -22,9 +20,8 @@ def load_config(config_path):
 
 def save_config(config_path, data):
     with open(config_path, "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, separators=(",", ":"))
 
-        
 def get_base_dir():
         if getattr(sys, 'frozen', False):
             return Path(sys.executable).parent
