@@ -56,12 +56,15 @@ class windows11energysaverswitch(QWidget):
         self.button.blockSignals(True)
         self.button.setChecked(initial_eco)
         self.button.blockSignals(False)
+        self.button_visual_update(initial_eco)
 
         self.button.toggled.connect(self.on_mode_changed)
         
     def on_mode_changed(self, eco: bool):
         print("TOGGLE FIRED:", eco)
         self.button_visual_update(eco)
+        self.config["eco_mode"] = eco
+        save_config(self.config_path, self.config)
         run_energy_toggle(eco)
         
             # hide AFTER logic runs
@@ -69,8 +72,6 @@ class windows11energysaverswitch(QWidget):
 
     def button_visual_update(self, eco: bool):
         self.button.setText("Eco Mode" if eco else "Normal Mode")
-        self.config["eco_mode"] = eco
-        save_config(self.config_path, self.config)
 
     def handle_activation(self):
         socket = self.server.nextPendingConnection()
