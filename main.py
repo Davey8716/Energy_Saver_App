@@ -4,6 +4,7 @@ import threading
 
 from PySide6.QtWidgets import QWidget,QApplication,QPushButton
 from PySide6.QtGui import Qt,QFont
+from PySide6.QtCore import Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from state_management import load_config, get_base_dir,save_config
 from run_energy_saver import run_energy_toggle
@@ -11,6 +12,8 @@ from run_energy_saver import run_energy_toggle
 SERVER_NAME = "EnergySaverSingleton"
 
 class windows11energysaverswitch(QWidget):
+    toggle_complete = Signal()
+
     def __init__(self):
         super().__init__()
         self.toggle_lock = threading.Lock()
@@ -45,6 +48,7 @@ class windows11energysaverswitch(QWidget):
         self.button_visual_update(initial_eco)
 
         self.button.toggled.connect(self.on_mode_changed)
+        self.toggle_complete.connect(QApplication.instance().quit)
         
     def on_mode_changed(self, eco: bool):
         print("TOGGLE FIRED:", eco)
@@ -60,6 +64,7 @@ class windows11energysaverswitch(QWidget):
     def run_energy_toggle_background(self, eco: bool):
         with self.toggle_lock:
             run_energy_toggle(eco)
+        self.toggle_complete.emit()
 
     def button_visual_update(self, eco: bool):
         self.button.setText("Eco Mode" if eco else "Normal Mode")

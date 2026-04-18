@@ -110,3 +110,4 @@ def run_energy_toggle(eco_mode: bool):
 
     except Exception as e:
         print(f"Failed to launch script: {e}")
+
