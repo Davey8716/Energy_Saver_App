@@ -86,28 +86,42 @@ def find_ahk_exe():
     return None
 
 def run_energy_toggle(eco_mode: bool):
+    """Run the Quick Settings automation and return ``(success, message)``.
+
+    AutoHotkey does the UI work, so its exit code is the only reliable point at
+    which the caller can decide whether to persist the requested mode.
+    """
     global ahk_exe
 
     if ahk_exe is None:
         ahk_exe = find_ahk_exe()
 
     if ahk_exe is None or not ahk_exe.exists():
-        print("AutoHotkey executable not found.")
-        return
+        return False, "AutoHotkey v2 could not be found."
 
     if not script.exists():
-        print("AHK script not found.")
-        return
+        return False, "The Energy Saver automation script could not be found."
 
     try:
-        subprocess.Popen(
+        result = subprocess.run(
             [
                 str(ahk_exe),
                 str(script),
                 "1" if eco_mode else "0"
-            ]
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
+        if result.returncode == 0:
+            return True, ""
+
+        details = (result.stderr or result.stdout or "").strip()
+        message = "Quick Settings was not ready, so Energy Saver was not changed."
+        if details:
+            message = f"{message}\n\n{details}"
+        return False, message
 
     except Exception as e:
-        print(f"Failed to launch script: {e}")
-
+        return False, f"Could not start the Energy Saver automation: {e}"
