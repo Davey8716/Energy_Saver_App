@@ -1,6 +1,6 @@
 # Energy Saver App
 
-A very simple Windows utility designed to save a few clicks when toggling
+A very simple Windows utility 11 designed to save a few clicks when toggling
 Energy Saver. It is intended to be built as a small executable that runs once,
 toggles the Energy Saver tile in Quick Settings, and exits.
 
