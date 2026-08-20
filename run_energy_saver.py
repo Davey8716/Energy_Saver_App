@@ -1,9 +1,10 @@
 
-import subprocess 
 import os
-from state_management import base_dir, load_config, save_config
+import subprocess
 from pathlib import Path
 from shutil import which
+
+from state_management import base_dir, load_config, save_config
 
 try:
     import winreg
@@ -14,8 +15,10 @@ script = (base_dir / "EnergySaver.ahk").resolve()
 config_path = (base_dir / "config.json").resolve()
 ahk_exe = None
 
+
 def is_ahk_v2_path(exe_path):
     return any(part.lower().startswith("v2") for part in exe_path.parts)
+
 
 def existing_paths(paths):
     seen = set()
@@ -30,11 +33,13 @@ def existing_paths(paths):
         seen.add(exe_path)
         yield exe_path
 
+
 def ahk_install_dirs():
     for env_name in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)", "LocalAppData"):
         base_path = os.environ.get(env_name)
         if base_path:
             yield Path(base_path) / "AutoHotkey"
+
 
 def ahk_v2_candidates():
     for exe_name in ("AutoHotkey64.exe", "AutoHotkey.exe"):
@@ -50,20 +55,33 @@ def ahk_v2_candidates():
             yield version_dir / "AutoHotkey64.exe"
             yield version_dir / "AutoHotkey.exe"
 
+
+def save_cached_ahk_path(exe_path):
+    """Best-effort persistence of the only supported configuration value."""
+    config = {"ahk_exe": str(exe_path)} if exe_path is not None else {}
+    try:
+        save_config(config_path, config)
+    except OSError:
+        pass
+
+
 def find_ahk_exe():
     config = load_config(config_path)
     cached_path = config.get("ahk_exe")
-    if cached_path:
+    if isinstance(cached_path, str) and cached_path:
         cached_exe = Path(cached_path)
         if cached_exe.exists() and is_ahk_v2_path(cached_exe):
+            if config != {"ahk_exe": cached_path}:
+                save_cached_ahk_path(cached_exe)
             return cached_exe
 
     for exe_path in existing_paths(ahk_v2_candidates()):
-        config["ahk_exe"] = str(exe_path)
-        save_config(config_path, config)
+        save_cached_ahk_path(exe_path)
         return exe_path
 
     if winreg is None:
+        if config:
+            save_cached_ahk_path(None)
         return None
 
     app_paths_key = r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths"
@@ -79,35 +97,47 @@ def find_ahk_exe():
                 pass
 
     for exe_path in existing_paths(registry_candidates):
-        config["ahk_exe"] = str(exe_path)
-        save_config(config_path, config)
+        save_cached_ahk_path(exe_path)
         return exe_path
 
+    if config:
+        save_cached_ahk_path(None)
     return None
 
-def run_energy_toggle(eco_mode: bool):
+
+def run_energy_toggle():
     """Run the Quick Settings automation and return ``(success, message)``.
 
-    AutoHotkey does the UI work, so its exit code is the only reliable point at
-    which the caller can decide whether to persist the requested mode.
+    AutoHotkey does the UI work, so its exit code tells the caller whether the
+    automation completed successfully.
     """
     global ahk_exe
 
     if ahk_exe is None:
         ahk_exe = find_ahk_exe()
 
+    missing_dependencies = []
     if ahk_exe is None or not ahk_exe.exists():
-        return False, "AutoHotkey v2 could not be found."
+        missing_dependencies.append(
+            "AutoHotkey v2 could not be found. Install AutoHotkey v2, then run "
+            "Energy Saver again."
+        )
 
     if not script.exists():
-        return False, "The Energy Saver automation script could not be found."
+        missing_dependencies.append(
+            "EnergySaver.ahk could not be found.\n\n"
+            f"Expected location:\n{script}\n\n"
+            "Keep EnergySaver.ahk in the same folder as the Energy Saver application."
+        )
+
+    if missing_dependencies:
+        return False, "\n\n".join(missing_dependencies)
 
     try:
         result = subprocess.run(
             [
                 str(ahk_exe),
                 str(script),
-                "1" if eco_mode else "0"
             ],
             check=False,
             capture_output=True,

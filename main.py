@@ -1,30 +1,39 @@
-"""Headless launcher for toggling Windows Energy Saver.
+"""Headless launcher for toggling Windows Energy Saver once per invocation."""
 
-Each invocation switches to the opposite of the last successfully saved mode
-and exits when the AutoHotkey automation finishes.
-"""
+import ctypes
 
-from state_management import get_base_dir, load_config, save_config
 from run_energy_saver import run_energy_toggle
+
+
+def show_error_dialog(message: str) -> None:
+    """Display a native Windows error dialog, falling back to console output."""
+    try:
+        ctypes.windll.user32.MessageBoxW(
+            None,
+            message,
+            "Energy Saver Error",
+            0x10,  # MB_OK | MB_ICONERROR
+        )
+    except Exception:
+        try:
+            print(f"Energy Saver Error: {message}")
+        except Exception:
+            pass
 
 
 def main() -> int:
     """Toggle Energy Saver once and return a process exit code."""
-    config_path = (get_base_dir().resolve() / "config.json").resolve()
-    config = load_config(config_path)
-    target_eco_mode = not bool(config.get("eco_mode", False))
-
-    success, _message = run_energy_toggle(target_eco_mode)
-    if not success:
-        return 1
-
-    config["eco_mode"] = target_eco_mode
     try:
-        save_config(config_path, config)
-    except OSError:
-        return 1
+        success, message = run_energy_toggle()
+    except Exception as error:
+        success = False
+        message = f"Energy Saver could not start.\n\n{error}"
 
-    return 0
+    if success:
+        return 0
+
+    show_error_dialog(message or "Energy Saver could not be changed.")
+    return 1
 
 
 if __name__ == "__main__":

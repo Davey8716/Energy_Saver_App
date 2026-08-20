@@ -3,11 +3,6 @@
 SendMode("Input")
 SetKeyDelay(0, 0)
 
-eco := A_Args.Length >= 1 ? A_Args[1] : ""
-
-if (eco = "")
-    ExitApp(1)
-
 Send("#a")
 
 ; On this Windows build Quick Settings does not provide a stable window title
